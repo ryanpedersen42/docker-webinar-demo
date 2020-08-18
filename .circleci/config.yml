@@ -1,0 +1,35 @@
+version: 2.1
+
+workflows:
+  build_test:
+    jobs:
+      - node/test:
+          matrix:
+            parameters:
+              version:
+                - 14.0.0
+                - 13.11.0
+                - 12.16.0
+      - build_docker_image:
+          requires:
+            - node/test
+
+jobs:
+  build_docker_image:
+    docker:
+      - image: cimg/node:14.0.0
+    steps:
+      - checkout
+      - setup_remote_docker:
+          #available on performance plan
+          docker_layer_caching: true
+      - run: 
+          name: Set up tag 
+          command: echo "export TAG=0.1.$CIRCLE_SHA1" >> $BASH_ENV
+      - run: 
+          name: Build Docker image
+          command: |
+            docker build -t your-image:$TAG .
+
+orbs:
+  node: circleci/node@4.0.0
